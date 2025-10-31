@@ -17,6 +17,46 @@ export function AudioRecorder() {
 
   const RecordingIcon = isRecording ? SquareIcon : MicIcon
 
+  async function recordAudio() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error('MediaDevices API is not supported in this browser')
+    }
+
+    const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    mediaRecorder.current = new MediaRecorder(audioStream)
+
+    if (mediaRecorder.current) {
+      mediaRecorder.current.start()
+
+      mediaRecorder.current.ondataavailable = (event: BlobEvent) => {
+        audioChunks.current.push(event.data)
+      }
+
+      mediaRecorder.current.onstop = async () => {
+        const blob = new Blob(audioChunks.current, { type: 'audio/wav' })
+        await transcribeAudio(blob)
+      }
+    }
+  }
+
+  async function handleRecordButtonClick() {
+    if (!isRecording) {
+      try {
+        // Reset state
+        audioChunks.current = []
+        setTranscription(null)
+
+        setIsRecording(true)
+        recordAudio()
+      } catch (error) {
+        console.error(error)
+      }
+    } else {
+      setIsRecording(false)
+      mediaRecorder.current?.stop()
+    }
+  }
+
   async function transcribeAudio(blob: Blob) {
     const formData = new FormData()
     formData.append(FORM_DATA_RECORDING_KEY, blob)
@@ -35,40 +75,6 @@ export function AudioRecorder() {
       console.error(error)
     } finally {
       setIsTranscribing(false)
-    }
-  }
-
-  async function handleRecordButtonClick() {
-    if (!isRecording) {
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        try {
-          // Reset audio chunks
-          audioChunks.current = []
-          setTranscription(null)
-          setIsRecording(true)
-
-          const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
-          mediaRecorder.current = new MediaRecorder(audioStream)
-
-          if (mediaRecorder.current) {
-            mediaRecorder.current.start()
-
-            mediaRecorder.current.ondataavailable = (event: BlobEvent) => {
-              audioChunks.current.push(event.data)
-            }
-
-            mediaRecorder.current.onstop = async () => {
-              const blob = new Blob(audioChunks.current, { type: 'audio/wav' })
-              await transcribeAudio(blob)
-            }
-          }
-        } catch (error) {
-          console.error(error)
-        }
-      }
-    } else {
-      setIsRecording(false)
-      mediaRecorder.current?.stop()
     }
   }
 

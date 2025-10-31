@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { MicIcon, SquareIcon } from 'lucide-react'
+import { playAudioFromBlob } from '@/lib/audio/play'
 import { cn } from '@/utils/css'
 
 export function AudioRecorder() {
@@ -32,26 +33,7 @@ export function AudioRecorder() {
 
             mediaRecorder.current.onstop = async () => {
               const blob = new Blob(audioChunks.current, { type: 'audio/wav' })
-
-              // Play
-              const audioContext = new AudioContext()
-              const blobUrl = URL.createObjectURL(blob)
-
-              // Fetch the blob as ArrayBuffer
-              const response = await fetch(blobUrl)
-              const arrayBuffer = await response.arrayBuffer()
-
-              // Decode it into PCM
-              const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
-
-              // Create a buffer source and play it
-              const source = audioContext.createBufferSource()
-              source.buffer = audioBuffer
-              source.connect(audioContext.destination)
-              source.start(0)
-
-              // Cleanup URL
-              URL.revokeObjectURL(blobUrl)
+              await playAudioFromBlob(blob)
             }
           }
         } catch (error) {

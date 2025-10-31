@@ -5,7 +5,6 @@ import { MicIcon, SquareIcon } from 'lucide-react'
 import { cn } from '@/utils/css'
 
 export function AudioRecorder() {
-  const recordButtonRef = useRef<HTMLButtonElement>(null)
   const mediaRecorder = useRef<MediaRecorder | null>(null)
   const audioChunks = useRef<Array<BlobPart>>([])
 
@@ -15,11 +14,7 @@ export function AudioRecorder() {
 
   async function handleRecordButtonClick() {
     if (!isRecording) {
-      if (
-        recordButtonRef.current &&
-        navigator.mediaDevices &&
-        navigator.mediaDevices.getUserMedia
-      ) {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         try {
           // Reset audio chunks
           audioChunks.current = []
@@ -72,7 +67,6 @@ export function AudioRecorder() {
   return (
     <div>
       <button
-        ref={recordButtonRef}
         className="cursor-pointer rounded-full bg-zinc-200 p-2.5 transition-colors hover:bg-zinc-300"
         type="button"
         onClick={handleRecordButtonClick}
